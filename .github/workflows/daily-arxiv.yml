@@ -19,6 +19,7 @@ jobs:
         docker build -t arxiv-slack .
         docker run --rm \
           -e SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}" \
+          -e SLACK_LLM_WEBHOOK_URL="${{ secrets.SLACK_LLM_WEBHOOK_URL }}" \
           arxiv-slack
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

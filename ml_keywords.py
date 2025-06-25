@@ -209,7 +209,6 @@ LLM_KEYWORDS = [
 
 # 材料関連キーワード（CS系カテゴリ用）
 MATERIAL_KEYWORDS = [
-    "material",
     "materials",
     "crystal",
     "crystalline",
