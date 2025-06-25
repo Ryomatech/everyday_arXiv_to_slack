@@ -1,0 +1,24 @@
+name: Daily arXiv to Slack
+
+on:
+  schedule:
+    # 毎日日本時間 9:00 (UTC 0:00) に実行
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  arxiv-to-slack:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Build and run Docker container
+      run: |
+        docker build -t arxiv-slack .
+        docker run --rm \
+          -e SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}" \
+          arxiv-slack
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
