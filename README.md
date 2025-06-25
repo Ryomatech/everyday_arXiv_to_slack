@@ -1,13 +1,15 @@
 # arXiv to Slack 自動投稿システム
 
-cond-mat.mtrl-sci カテゴリの新着論文を毎日SlackにポストするGitHub Actionsプロジェクトです。
+cond-mat.mtrl-sci カテゴリの新着論文を12時間おきにSlackにポストするGitHub Actionsプロジェクトです。
 
 ## 機能
 
-- arXiv RSS (cond-mat.mtrl-sci) から新着論文を取得
+- arXiv API (cond-mat.mtrl-sci) から新着論文を取得
+- 時間フィルタリング機能（過去12時間以内の論文のみ取得）
 - 重複防止機能付き（前回投稿した論文IDを記録）
-- 毎日自動実行（日本時間 9:00）
+- 12時間おき自動実行（日本時間 9:00 と 21:00）
 - Docker コンテナで実行
+- PDFリンクとカテゴリ情報を含む詳細な投稿
 
 ## セットアップ手順
 
@@ -39,58 +41,29 @@ cp .env.example .env
 
 ### 3. 実行スケジュール
 
-- **自動実行**: 毎日 UTC 0:00 (日本時間 9:00)
+- **自動実行**: 12時間おき UTC 0:00 と 12:00 (日本時間 9:00 と 21:00)
 - **手動実行**: GitHub Actions の "Run workflow" ボタンから実行可能
 
-## セキュリティについて
+## 技術仕様
 
-このプロジェクトでは以下の方法でAPIキーを安全に管理しています：
+### ArXiv API使用
 
-1. **GitHub Secrets**: 本番環境では GitHub の暗号化されたシークレット機能を使用
-2. **環境変数**: コードにAPIキーを直接記述しない
-3. **`.gitignore`**: 機密情報を含む `.env` ファイルをGitから除外
-4. **`.env.example`**: 設定例を提供（実際の値は含まない）
+- **API エンドポイント**: `http://export.arxiv.org/api/query`
+- **検索クエリ**: `cat:cond-mat.mtrl-sci`
+- **ソート**: 投稿日時の降順
+- **最大取得数**: 300件（設定可能）
+- **時間フィルタ**: 過去12時間以内の論文のみ（設定可能）
 
-## ローカルでのテスト
+### 時間フィルタを変更する場合
 
-```bash
-# 依存関係をインストール
-pip install -r requirements.txt
-
-# 環境変数を設定して実行
-python arxiv_to_slack.py
-
-# または Dockerを使用
-docker build -t arxiv-slack .
-docker run --rm -e SLACK_WEBHOOK_URL="your_webhook_url_here" arxiv-slack
-```
-
-## ファイル構成
-
-```
-.
-├── arxiv_to_slack.py       # メインスクリプト
-├── Dockerfile              # Docker設定
-├── requirements.txt        # Python依存関係
-├── .env.example           # 環境変数設定例
-├── .gitignore             # Git除外設定
-├── .github/workflows/
-│   └── daily-arxiv.yml     # GitHub Actionsワークフロー
-└── README.md               # このファイル
-```
-
-## カスタマイズ
-
-### 異なるarXivカテゴリを使用する場合
-
-`arxiv_to_slack.py` の `ARXIV_RSS` 変数を変更してください：
+`fetch_new_entries()` 関数内の時間設定を変更してください：
 
 ```python
-# 例：物理学全般
-ARXIV_RSS = "https://export.arxiv.org/rss/physics"
+# 例：6時間前から
+time_threshold = now - timedelta(hours=6)
 
-# 例：コンピュータサイエンス
-ARXIV_RSS = "https://export.arxiv.org/rss/cs"
+# 例：24時間前から
+time_threshold = now - timedelta(hours=24)
 ```
 
 ### 実行時間を変更する場合
@@ -98,6 +71,7 @@ ARXIV_RSS = "https://export.arxiv.org/rss/cs"
 `.github/workflows/daily-arxiv.yml` の cron 設定を変更してください：
 
 ```yaml
-# 毎日 UTC 12:00 (日本時間 21:00) に実行
-- cron: '0 12 * * *'
+# 毎日 UTC 6:00 と 18:00 (日本時間 15:00 と 3:00) に実行
+- cron: '0 6 * * *'
+- cron: '0 18 * * *'
 ```

@@ -1,9 +1,11 @@
-name: Daily arXiv to Slack
+name: Twice Daily arXiv to Slack
 
 on:
   schedule:
     # 毎日日本時間 9:00 (UTC 0:00) に実行
     - cron: '0 0 * * *'
+    # 毎日日本時間 21:00 (UTC 12:00) に実行
+    - cron: '0 12 * * *'
   workflow_dispatch: # 手動実行も可能
 
 jobs:
