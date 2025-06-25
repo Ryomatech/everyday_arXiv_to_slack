@@ -77,7 +77,7 @@ def fetch_new_entries_for_category(category: str, keywords: list):
         new_entries = []
         last_ids = load_last_ids()
         last_id = last_ids.get(category)
-
+        print(feed.entries)
         for entry in feed.entries:
             # arXiv IDを取得
             arxiv_id = entry.id.split("/abs/")[-1]
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     for category, keywords in SEARCH_CATEGORIES.items():
         print(f"Processing category: {category}")
         entries = fetch_new_entries_for_category(category, keywords)
-
+        print(entries)
         if entries:
             # 最新のIDを記録
             latest_id = entries[-1].id.split("/abs/")[-1]
