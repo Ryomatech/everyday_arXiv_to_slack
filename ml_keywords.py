@@ -1,5 +1,6 @@
 # 機械学習関連キーワード（abstractでフィルタリング用）
 ML_KEYWORDS = [
+    "monolayer",
     "machine learning",
     "deep learning",
     "neural network",
@@ -332,5 +333,5 @@ MATERIAL_KEYWORDS = [
     "graph neural network",
     "interpretability",
     "materials informatics",
-    "materials science"
+    "materials science",
 ]
