@@ -23,22 +23,6 @@ SEARCH_CATEGORIES = {
 }
 
 WEBHOOK = os.environ.get("SLACK_WEBHOOK_URL")
-STATE_FILE = pathlib.Path("/tmp/arxiv_multi_category_slack.state")
-
-
-def load_last_ids() -> dict:
-    """前回送信済みの各カテゴリの最上位 arXiv ID を取得"""
-    if STATE_FILE.exists():
-        try:
-            return json.loads(STATE_FILE.read_text())
-        except:
-            return {}
-    return {}
-
-
-def save_last_ids(last_ids: dict) -> None:
-    """今回送った各カテゴリの最新 arXiv ID を保存"""
-    STATE_FILE.write_text(json.dumps(last_ids))
 
 
 def fetch_new_entries_for_category(category: str, keywords: list):
@@ -75,17 +59,7 @@ def fetch_new_entries_for_category(category: str, keywords: list):
         feed = feedparser.parse(url)
 
         new_entries = []
-        last_ids = load_last_ids()
-        last_id = last_ids.get(category)
-        print(feed.entries)
         for entry in feed.entries:
-            # arXiv IDを取得
-            arxiv_id = entry.id.split("/abs/")[-1]
-
-            # 既に処理済みの論文かチェック
-            if arxiv_id == last_id:
-                break
-
             # 'published' フィールドの日付を解析
             published_str = entry.published
             published = datetime.datetime.strptime(published_str, "%Y-%m-%dT%H:%M:%SZ")
@@ -156,7 +130,6 @@ def post_to_slack(text: str):
 
 if __name__ == "__main__":
     all_messages = []
-    last_ids = load_last_ids()
 
     # 現在の日付を取得（JST）
     jst = datetime.timezone(datetime.timedelta(hours=9))
@@ -166,19 +139,13 @@ if __name__ == "__main__":
     for category, keywords in SEARCH_CATEGORIES.items():
         print(f"Processing category: {category}")
         entries = fetch_new_entries_for_category(category, keywords)
-        print(entries)
+        print(f"Found {len(entries)} entries for {category}")
+        
         if entries:
-            # 最新のIDを記録
-            latest_id = entries[-1].id.split("/abs/")[-1]
-            last_ids[category] = latest_id
-
             # メッセージを作成
             message = build_message_for_category(category, entries)
             if message:
                 all_messages.append(message)
-
-    # 最新IDを保存
-    save_last_ids(last_ids)
 
     # すべてのメッセージを結合して送信
     if all_messages:
