@@ -1,6 +1,5 @@
 # 機械学習関連キーワード（abstractでフィルタリング用）
 ML_KEYWORDS = [
-    "growing",
     "machine learning",
     "deep learning",
     "neural network",
@@ -28,7 +27,6 @@ ML_KEYWORDS = [
     "RNN",
     "LSTM",
     "GAN",
-    "model",
     "autoencoder",
     "attention mechanism",
     "self-attention",
@@ -329,4 +327,10 @@ MATERIAL_KEYWORDS = [
     "electrocatalysis",
     "heterogeneous catalysis",
     "homogeneous catalysis",
+    "bert",
+    "GNN",
+    "graph neural network",
+    "interpretability",
+    "materials informatics",
+    "materials science"
 ]
