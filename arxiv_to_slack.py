@@ -60,6 +60,7 @@ def fetch_new_entries_for_category(category: str, keywords: list):
 
         new_entries = []
         for entry in feed.entries:
+            print(entry)
             # 'published' フィールドの日付を解析
             published_str = entry.published
             published = datetime.datetime.strptime(published_str, "%Y-%m-%dT%H:%M:%SZ")
