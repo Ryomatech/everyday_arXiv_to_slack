@@ -199,9 +199,16 @@ ML_KEYWORDS = [
     "blending",
 ]
 
+# LLM関連キーワード（CS系カテゴリ用）
+LLM_KEYWORDS = [
+    "large language model",
+    "llm",
+    "bert",
+    "llama"
+]
+
 # 材料関連キーワード（CS系カテゴリ用）
 MATERIAL_KEYWORDS = [
-    "LLM"
     "material",
     "materials",
     "crystal",
@@ -328,8 +335,6 @@ MATERIAL_KEYWORDS = [
     "electrocatalysis",
     "heterogeneous catalysis",
     "homogeneous catalysis",
-    "bert",
-    "GNN",
     "graph neural network",
     "interpretability",
     "materials informatics",

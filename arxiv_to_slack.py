@@ -9,7 +9,7 @@ import requests
 import pathlib
 import urllib.parse
 import time
-from ml_keywords import ML_KEYWORDS, MATERIAL_KEYWORDS
+from ml_keywords import ML_KEYWORDS, MATERIAL_KEYWORDS, LLM_KEYWORDS
 
 # ArXiv APIのURL
 ARXIV_API_BASE = "http://export.arxiv.org/api/query?"
@@ -20,6 +20,10 @@ SEARCH_CATEGORIES = {
     "cs.AI": MATERIAL_KEYWORDS,  # CS.AIでは材料キーワードでフィルタ
     "cs.LG": MATERIAL_KEYWORDS,  # CS.LGでは材料キーワードでフィルタ
     "cs.CL": MATERIAL_KEYWORDS,  # CS.CLでは材料キーワードでフィルタ
+    # LLM関連の論文を取得するための追加カテゴリ
+    "cs.AI-LLM": LLM_KEYWORDS,  # CS.AIからLLM関連論文
+    "cs.LG-LLM": LLM_KEYWORDS,  # CS.LGからLLM関連論文
+    "cs.CL-LLM": LLM_KEYWORDS,  # CS.CLからLLM関連論文
 }
 
 WEBHOOK = os.environ.get("SLACK_WEBHOOK_URL")
@@ -30,15 +34,20 @@ def fetch_new_entries_for_category(category: str, keywords: list):
     try:
         # 現在のUTC時刻を取得
         now = datetime.datetime.utcnow()
-        # 12時間前のUTC時刻を取得
+        # 24時間前のUTC時刻を取得
         time_threshold = now - timedelta(hours=24)
 
         # キーワードでabstractフィルタを構築
         keyword_terms = [f'abs:"{keyword}"' for keyword in keywords]
         keyword_filter = " OR ".join(keyword_terms)
 
+        # LLM専用カテゴリの場合、実際のarXivカテゴリ名を使用
+        actual_category = category
+        if category.endswith("-LLM"):
+            actual_category = category.replace("-LLM", "")
+
         # カテゴリとキーワードを組み合わせた検索クエリ
-        search_query = f"cat:{category} AND ({keyword_filter})"
+        search_query = f"cat:{actual_category} AND ({keyword_filter})"
 
         # APIパラメータの設定
         params = {
@@ -53,7 +62,7 @@ def fetch_new_entries_for_category(category: str, keywords: list):
         query_string = urllib.parse.urlencode(params, safe=":")
         url = ARXIV_API_BASE + query_string
 
-        print(f"Fetching from {category}: {url}")
+        print(f"Fetching from {category} (actual: {actual_category}): {url}")
 
         # フィードをパース
         feed = feedparser.parse(url)
@@ -81,7 +90,16 @@ def fetch_new_entries_for_category(category: str, keywords: list):
 
 def get_category_emoji(category: str) -> str:
     """カテゴリに対応する絵文字を返す"""
-    emoji_map = {"cond-mat.mtrl-sci": "🔬", "cs.AI": "🤖", "cs.LG": "📊", "cs.CL": "💬"}
+    emoji_map = {
+        "cond-mat.mtrl-sci": "🔬",
+        "cs.AI": "🤖",
+        "cs.LG": "📊",
+        "cs.CL": "💬",
+        # LLM専用カテゴリ用の絵文字
+        "cs.AI-LLM": "🧠",
+        "cs.LG-LLM": "🤖💬",
+        "cs.CL-LLM": "📝",
+    }
     return emoji_map.get(category, "📄")
 
 
@@ -95,12 +113,8 @@ def build_message_for_category(category: str, entries: list) -> str:
 
     for e in entries:
         title = e.title.replace("\n", " ")
-        # PDFリンクを取得
-        pdf_url = e.link  # デフォルトはabsページ
-        for link in e.links:
-            if hasattr(link, "title") and link.title == "pdf":
-                pdf_url = link.href
-                break
+        # abstractページのリンクを使用
+        abs_url = e.link  # デフォルトでabstractページのURL
 
         # カテゴリ情報を取得
         categories = (
@@ -108,7 +122,7 @@ def build_message_for_category(category: str, entries: list) -> str:
         )
 
         lines.append(f"• *{title}*")
-        lines.append(f"  📄 <{pdf_url}|PDF> | 🏷️ {categories}")
+        lines.append(f"  📄 <{abs_url}|Abstract> | 🏷️ {categories}")
         lines.append("")  # 空行で区切り
 
     return "\n".join(lines)
@@ -140,7 +154,7 @@ if __name__ == "__main__":
         print(f"Processing category: {category}")
         entries = fetch_new_entries_for_category(category, keywords)
         print(f"Found {len(entries)} entries for {category}")
-        
+
         if entries:
             # メッセージを作成
             message = build_message_for_category(category, entries)
@@ -155,6 +169,6 @@ if __name__ == "__main__":
         print(f"Message: {final_message}")
         post_to_slack(final_message)
     else:
-        no_papers_message = f"📅 *arXiv更新情報 ({current_date})*\n📚 過去12時間以内に新着論文がありません。"
+        no_papers_message = f"📅 *arXiv更新情報 ({current_date})*\n📚 過去24時間以内に新着論文がありません。"
         print(f"Message: {no_papers_message}")
         post_to_slack(no_papers_message)
