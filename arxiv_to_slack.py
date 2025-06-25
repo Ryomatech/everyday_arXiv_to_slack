@@ -27,6 +27,7 @@ SEARCH_CATEGORIES = {
 }
 
 WEBHOOK = os.environ.get("SLACK_WEBHOOK_URL")
+LLM_WEBHOOK = os.environ.get("SLACK_LLM_WEBHOOK_URL")
 
 
 def fetch_new_entries_for_category(category: str, keywords: list):
@@ -128,22 +129,32 @@ def build_message_for_category(category: str, entries: list) -> str:
     return "\n".join(lines)
 
 
-def post_to_slack(text: str):
+def is_llm_category(category: str) -> bool:
+    """LLM関連カテゴリかどうかを判定"""
+    return category.endswith("-LLM")
+
+
+def post_to_slack(text: str, is_llm: bool = False):
     """Webhook でポスト"""
-    if not WEBHOOK:
-        print("SLACK_WEBHOOK_URL environment variable is not set")
+    webhook_url = LLM_WEBHOOK if is_llm else WEBHOOK
+    webhook_name = "SLACK_LLM_WEBHOOK_URL" if is_llm else "SLACK_WEBHOOK_URL"
+
+    if not webhook_url:
+        print(f"{webhook_name} environment variable is not set")
         return
 
     try:
-        resp = requests.post(WEBHOOK, json={"text": text})
+        resp = requests.post(webhook_url, json={"text": text})
         resp.raise_for_status()
-        print("Successfully posted to Slack")
+        channel_type = "LLM channel" if is_llm else "main channel"
+        print(f"Successfully posted to Slack ({channel_type})")
     except Exception as e:
         print(f"Error posting to Slack: {e}")
 
 
 if __name__ == "__main__":
     all_messages = []
+    llm_messages = []
 
     # 現在の日付を取得（JST）
     jst = datetime.timezone(datetime.timedelta(hours=9))
@@ -159,16 +170,33 @@ if __name__ == "__main__":
             # メッセージを作成
             message = build_message_for_category(category, entries)
             if message:
-                all_messages.append(message)
+                # LLM関連かどうかで分ける
+                if is_llm_category(category):
+                    llm_messages.append(message)
+                else:
+                    all_messages.append(message)
 
-    # すべてのメッセージを結合して送信
+    # 通常のメッセージを送信
     if all_messages:
         final_message = f"📅 *arXiv更新情報 ({current_date})*\n\n" + "\n\n".join(
             all_messages
         )
-        print(f"Message: {final_message}")
+        print(f"Main channel message: {final_message}")
         post_to_slack(final_message)
     else:
         no_papers_message = f"📅 *arXiv更新情報 ({current_date})*\n📚 過去24時間以内に新着論文がありません。"
-        print(f"Message: {no_papers_message}")
+        print(f"Main channel message: {no_papers_message}")
         post_to_slack(no_papers_message)
+
+    # LLM関連のメッセージを送信
+    if llm_messages:
+        llm_final_message = (
+            f"📅 *arXiv LLM関連更新情報 ({current_date})*\n\n"
+            + "\n\n".join(llm_messages)
+        )
+        print(f"LLM channel message: {llm_final_message}")
+        post_to_slack(llm_final_message, is_llm=True)
+    else:
+        no_llm_papers_message = f"📅 *arXiv LLM関連更新情報 ({current_date})*\n📚 過去24時間以内にLLM関連の新着論文がありません。"
+        print(f"LLM channel message: {no_llm_papers_message}")
+        post_to_slack(no_llm_papers_message, is_llm=True)
