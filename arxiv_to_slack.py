@@ -31,7 +31,7 @@ def fetch_new_entries_for_category(category: str, keywords: list):
         # 現在のUTC時刻を取得
         now = datetime.datetime.utcnow()
         # 12時間前のUTC時刻を取得
-        time_threshold = now - timedelta(hours=12)
+        time_threshold = now - timedelta(hours=24)
 
         # キーワードでabstractフィルタを構築
         keyword_terms = [f'abs:"{keyword}"' for keyword in keywords]
