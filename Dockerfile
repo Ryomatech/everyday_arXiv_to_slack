@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # スクリプトをコピー
 COPY arxiv_to_slack.py .
+COPY ml_keywords.py .
 
 # スクリプトを実行可能にする
 RUN chmod +x arxiv_to_slack.py
