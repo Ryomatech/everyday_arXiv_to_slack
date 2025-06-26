@@ -35,8 +35,11 @@ def fetch_new_entries_for_category(category: str, keywords: list):
     try:
         # 現在のUTC時刻を取得
         now = datetime.datetime.utcnow()
-        # 24時間前のUTC時刻を取得
-        time_threshold = now - timedelta(hours=24)
+        # 28時間前に変更（EST/EDTとの時差を考慮）
+        time_threshold = now - timedelta(hours=28)
+
+        print(f"Current UTC time: {now}")
+        print(f"Time threshold (28h ago): {time_threshold}")
 
         # キーワードでabstractフィルタを構築
         keyword_terms = [f'abs:"{keyword}"' for keyword in keywords]
@@ -74,9 +77,18 @@ def fetch_new_entries_for_category(category: str, keywords: list):
             published_str = entry.published
             published = datetime.datetime.strptime(published_str, "%Y-%m-%dT%H:%M:%SZ")
 
+            # デバッグ用ログ
+            print(
+                f"Paper: {entry.title[:50]}... | Published: {published} | Include: {published >= time_threshold}"
+            )
+
             # 指定時間内に公開されたものかを確認
             if published >= time_threshold:
                 new_entries.append(entry)
+
+        print(
+            f"Total entries found: {len(feed.entries)}, New entries: {len(new_entries)}"
+        )
 
         # APIレート制限を考慮して少し待機
         time.sleep(1)
