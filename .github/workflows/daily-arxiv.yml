@@ -3,7 +3,7 @@ name: Daily arXiv to Slack
 on:
   schedule:
     # 毎日日本時間 8:00 (UTC 23:00) に実行
-    - cron: '0 23 * * *'
+    - cron: '0 05 * * *'
   workflow_dispatch: # 手動実行も可能
 
 jobs:
